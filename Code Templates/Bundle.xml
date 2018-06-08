@@ -1,0 +1,1125 @@
+<list>
+<codeTemplate version="3.6.0">
+  <id>e31ef05e-7cd5-43d2-a2db-b264ed98c003</id>
+  <name>Convert Date From Multiple Formats</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528475184398</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Parses a date (String, Date, DateTime, or Number) into a string using an array of possible input
+	patterns and the specified output pattern.
+
+	@param {Object} date - The String, Date, DateTime, or Number to convert.
+	@param {String} outpattern - The pattern to use when converting the date to the output string.
+	@return {String} The converted output date string.
+*/
+var patterns = [
+	&apos;yyyy-MM-dd HH:mm:ss:SSS&apos;,
+	&apos;yyyy-MM-dd HH:mm:ss.SSS&apos;,
+	&apos;yyyy-MM-dd HH:mm:ss&apos;,
+	&apos;yyyy-MM-dd HH:mm&apos;,
+	&apos;EEE MMM dd HH:mm:ss:SSS zzz yyyy&apos;,
+	&apos;EEE MMM dd HH:mm:ss.SSS zzz yyyy&apos;,
+	&apos;EEE MMM dd HH:mm:ss zzz yyyy&apos;,
+	&apos;EEE MMM dd zzz yyyy&apos;,
+	&apos;dd-MMM-yyyy HH:mm:ss:SSS&apos;,
+	&apos;dd-MMM-yyyy HH:mm:ss.SSS&apos;,
+	&apos;dd-MMM-yyyy HH:mm:ss&apos;,
+	&apos;yyyy-MM-dd&apos;,
+	&apos;yyyy MM dd&apos;,
+	&apos;yyyy.MM.dd&apos;,
+	&apos;MM-dd-yyyy&apos;,
+	&apos;MM dd yyyy&apos;,
+	&apos;MM.dd.yyyy&apos;,
+	&apos;HH:mm:ss:SSS&apos;,
+	&apos;HH:mm:ss.SSS&apos;,
+	&apos;HH:mm:ss&apos;,
+	&apos;yyyyMMddHHmmssSSS&apos;,
+	&apos;yyyyMMddHHmmss&apos;,
+	&apos;yyyyMMddHHmm&apos;,
+	&apos;hh:mm aa&apos;];
+
+var formatters = [];
+for each (pattern in patterns) {
+	formatters.push(org.joda.time.format.DateTimeFormat.forPattern(pattern));
+}
+
+function convertDate(date, outpattern) {
+	var instant = 0;
+	if (typeof date == &apos;number&apos; || date instanceof java.lang.Number) {
+		instant = new Number(date);
+	} else if (date instanceof Date || date instanceof java.util.Date) {
+		instant = date.getTime();
+	} else if (date instanceof org.joda.time.ReadableInstant) {
+		instant = date.getMillis();
+	} else {
+		for each (formatter in formatters) {
+			try {
+				instant = formatter.parseMillis(new String(date));
+				break;
+			} catch(e) {}
+		}
+	}
+
+	return org.joda.time.format.DateTimeFormat.forPattern(outpattern).print(instant);
+}</code>
+  </properties>
+</codeTemplate>
+<codeTemplate version="3.6.0">
+  <id>64b8b653-162b-454e-a790-21d659934bc8</id>
+  <name>Convert XML to HL7</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528471047754</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Deserializes an E4X XML node into HL7 v2.x. The last four parameters are optional and default to the
+	standard encoding characters.
+
+	@param {XML} node - The E4X XML node to deserialize.
+	@param {String} fieldSeparator - Defaults to &apos;|&apos; if not specified.
+	@param {String} componentSeparator - Defaults to &apos;^&apos; if not specified.
+	@param {String} repetitionMarker - Defaults to &apos;~&apos; if not specified.
+	@param {String} subcomponentSeparator - Defaults to &apos;&amp;&apos; if not specified.
+	@return {String} The deserialized HL7 v2.x string.
+*/
+function xmlToHL7(node, fieldSeparator, componentSeparator, repetitionMarker, subcomponentSeparator) {
+	// Data validation
+	if (!node) {
+		return &apos;&apos;;
+	}
+	
+	// This shouldn&apos;t really ever happen with E4X anyway, but just in case.
+	String.prototype.replaceAmp = function() {return this.replace(/&amp;amp;/g,&apos;&amp;&apos;);};
+	
+	// If we&apos;re just dealing with a simple node, then just return its contents.
+	if (node.hasSimpleContent()) {
+		return node.toString().replaceAmp();
+	}
+	
+	// Used for StringUtils
+	importPackage(org.apache.commons.lang3);
+	
+	// Defaults to standard HL7 encoding characters
+	var fs = fieldSeparator || &apos;|&apos;;
+	var cs = componentSeparator || &apos;^&apos;;
+	var rm = repetitionMarker || &apos;~&apos;;
+	var ss = subcomponentSeparator || &apos;&amp;&apos;;
+	var cr = &apos;\x0D&apos;;
+
+	// What will actually be returned
+	var output = &apos;&apos;;
+	// Get the XML name of the node (in the case of an XMLList of repeating fields, the first one will be returned, since they all have the same name anyway)
+	var qname = node[0].name().toString();
+	// Use the HL7 dot notation to find what level we&apos;re at
+	var level = StringUtils.countMatches(qname,&apos;.&apos;);
+
+	// If the name is HL7Message, we&apos;re at the root node
+	if (qname == &apos;HL7Message&apos;) {
+		// Recursively append serialization for each segment
+		for each (segment in node.children()) {
+			output += xmlToHL7(segment,fs,cs,rm,ss);
+		}
+	} else if (level == 0) { // If we&apos;re at the segment level
+		// If the node is an XMLList of multiple segments
+		if (node.length() &gt; 1) {
+			// Recursively append serialization for each segment
+			for each (segment in node) {
+				output += xmlToHL7(segment,fs,cs,rm,ss);
+			}
+		} else {
+			// Add the segment name to the output
+			output += qname;
+			// Initialize name placeholder
+			var prevName = &apos;&apos;;
+			
+			// Iterate through each field in the segment
+			for each (field in node.children()) {
+				// Get the QName of the field
+				var fieldName = field.name().toString();
+				
+				// If we&apos;re dealing with the special cases of MSH.1/2, then just add the field contents
+				if (fieldName in {&apos;MSH.1&apos;:1,&apos;MSH.2&apos;:1}) {
+					output += field.toString().replaceAmp();
+				} else { // Otherwise add the recursive serialization of the field
+					// If we&apos;re on a field repetition, then prepend a repetition marker, otherwise prepend a field separator
+					output += (prevName==fieldName?rm:fs) + xmlToHL7(field,fs,cs,rm,ss);
+				}
+				
+				// Update the field name placeholder
+				prevName = fieldName;
+			}
+			
+			// Add a carriage return to the end of the segment
+			output += cr;
+		}
+	} else if (level == 1) { // If we&apos;re at the field level
+		// If the node is an XMLList of multiple fields
+		if (node.length() &gt; 1) {
+			// Recursively append serialization for each field
+			for each (field in node) {
+				output += xmlToHL7(field,fs,cs,rm,ss) + rm;
+			}
+			
+			// Remove the final repetition marker
+			output = StringUtils.chomp(output,rm);
+		}
+		else {
+			// Recursively append serialization for each component
+			for each (component in node.children()) {
+				// Append a component separator to the end
+				output += xmlToHL7(component,fs,cs,rm,ss) + cs;
+			}
+			
+			// Remove the last component separator
+			output = StringUtils.chomp(output,cs);
+		}
+	} else if (level == 2) { // If we&apos;re at the component level
+		// Recursively append serialization for each subcomponent
+		for each (subcomponent in node.children()) {
+			// Append a subcomponent separator to the end
+			output += xmlToHL7(subcomponent,fs,cs,rm,ss) + ss;
+		}
+		
+		// Remove the last subcomponent separator
+		output = StringUtils.chomp(output,ss);
+	} else { // If we&apos;re at the subcomponent level
+		// Just add the contents of the node
+		output = node.toString().replaceAmp();
+	}
+
+	// Return the final output
+	return output;
+}</code>
+  </properties>
+</codeTemplate>
+<codeTemplate version="3.6.0">
+  <id>41f83fb6-69a4-434d-8e11-d687577f387e</id>
+  <name>Create Segment Before Segment</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528473853696</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Creates a new segment with the given name and inserts it before the given segment.
+
+	@param {String} insertSegmentName - The name of the new segment to insert.
+	@param {XML} beforeThisSegment - The segment to insert just before.
+	@return {XML} The newly created segment.
+*/
+function createSegmentBefore(insertSegmentName, beforeThisSegment) {
+	var msgObj = beforeThisSegment;
+	while (msgObj.parent() != undefined) {
+		msgObj = msgObj.parent();
+	}
+	msgObj.insertChildBefore(beforeThisSegment[0], new XML(&apos;&lt;&apos; + insertSegmentName + &apos;&gt;&lt;/&apos; + insertSegmentName + &apos;&gt;&apos;));
+	return msgObj.child(beforeThisSegment[0].childIndex() - 1);
+}</code>
+  </properties>
+</codeTemplate>
+<codeTemplate version="3.6.0">
+  <id>942f9161-6998-42e1-9528-83342f457ac5</id>
+  <name>Encrypt PDF</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528479842139</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Encrypts a PDF with a password. Either a Base64 string or by array can be passed in, and the output
+	can be written to a file or returned as a Base64 string.
+
+	@param {String/byte[]} pdfBase64OrBytes - The PDF data to encrypt. May be a Base64 string, or a
+		byte array.
+	@param {String} password - The password to use for encryption.
+	@param {String} outputFilename - (Optional) The filename to output the encrypted PDF to. If
+		omitted, the data will be returned from the function as a Base64 string.
+	@return {String} If outputFilename is not specified, returns the Base64 string.
+*/
+function encryptPDF(pdfBase64OrBytes, password, outputFilename) {
+	var document;
+	var fos;
+
+	try {
+		var pdfBytes;
+		if (pdfBase64OrBytes instanceof Array) {
+			pdfBytes = pdfBase64OrBytes;
+		} else {
+			pdfBytes = FileUtil.decode(pdfBase64OrBytes);
+		}
+
+		var inputStream = new java.io.ByteArrayInputStream(pdfBytes);
+		document = org.apache.pdfbox.pdmodel.PDDocument.load(inputStream);
+
+		var accessPermission = new org.apache.pdfbox.pdmodel.encryption.AccessPermission();
+		accessPermission.setCanAssembleDocument(false);
+		accessPermission.setCanExtractContent(true);
+		accessPermission.setCanExtractForAccessibility(false);
+		accessPermission.setCanFillInForm(false);
+		accessPermission.setCanModify(false);
+		accessPermission.setCanModifyAnnotations(false);
+		accessPermission.setCanPrint(true);
+		accessPermission.setCanPrintDegraded(true);
+
+		var policy = new org.apache.pdfbox.pdmodel.encryption.StandardProtectionPolicy(UUIDGenerator.getUUID(), password, accessPermission);
+		policy.setEncryptionKeyLength(128);
+		document.protect(policy);
+
+		if (outputFilename) {
+			fos = new java.io.FileOutputStream(new java.io.File(outputFilename));
+			document.save(fos);
+		} else {
+			var baos = new java.io.ByteArrayOutputStream();
+			document.save(baos);
+			return FileUtil.encode(baos.toByteArray());
+		}
+	} finally {
+		if (document) {
+			document.close();
+		}
+		if (fos) {
+			fos.close();
+		}
+	}
+}</code>
+  </properties>
+</codeTemplate>
+<codeTemplate version="3.6.0">
+  <id>28e29e59-d093-41cf-8c2d-4ad4587f9e20</id>
+  <name>Execute Runtime Command</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528480103022</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Executes a command or array of command and arguments using a local OS shell. Returns an object
+	containing the exit value, output, and errors.
+
+	@param {String/Array} args - The command arguments, as either a string or an array.
+	@param {String} charset - (Optional) The charset encoding to use when reading the output from the
+		command. If omitted, the JVM default charset will be used.
+	@return {Object} An Object with the properties exitValue, stdout, and stderr.
+*/
+function executeRuntimeCommand(args, charset) {
+	var process = java.lang.Runtime.getRuntime().exec(args);
+	var stdoutConsumer = new StreamConsumer(process.getInputStream(), charset);
+	var stderrConsumer = new StreamConsumer(process.getErrorStream(), charset);
+	return {
+		exitValue : process.waitFor(),
+		stdout : stdoutConsumer.getOutput(),
+		stderr : stderrConsumer.getOutput()
+	};
+}
+
+function StreamConsumer(is, charset) {
+	var output = &apos;&apos;;
+	
+	var thread = new java.lang.Thread({
+		run: function() {
+			if (typeof charset !== &apos;undefined&apos;) {
+				output = org.apache.commons.io.IOUtils.toString(is, charset);
+			} else {
+				output = org.apache.commons.io.IOUtils.toString(is);
+			}
+		}
+	});
+
+	this.interrupt = function() {
+		thread.interrupt();
+	}
+
+	this.getOutput = function() {
+		thread.join();
+		return output;
+	};
+
+	thread.start();
+}</code>
+  </properties>
+</codeTemplate>
+<codeTemplate version="3.6.0">
+  <id>dcd2ce64-4c3c-4e53-9f71-dbf296004fe3</id>
+  <name>Extract Text From PDF</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528480223261</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Extracts and returns all text from a PDF. Uses the built-in iText library, version 2.1.7.
+
+	@param {byte[]} pdfBytes - The raw byte array for the PDF.
+	@return {String} The extracted text.
+*/
+function extractTextFromPDF(pdfBytes) {
+	var text = new java.lang.StringBuilder();
+	var reader = new com.lowagie.text.pdf.PdfReader(pdfBytes);
+	
+	try {
+		var extractor = new com.lowagie.text.pdf.parser.PdfTextExtractor(reader);
+		var pages = reader.getNumberOfPages();
+		
+		for (var i = 1; i &lt;= pages; i++) {
+			text.append(extractor.getTextFromPage(i));
+			if (i &lt; pages) {
+				text.append(&apos;\n\n&apos;);
+			}
+		}
+	} finally {
+		reader.close();
+	}
+
+	return text.toString();
+}</code>
+  </properties>
+</codeTemplate>
+<codeTemplate version="3.6.0">
+  <id>23adc50e-ab2b-4c9f-ab4b-6b17dc31bab7</id>
+  <name>Fix Node Order in HL7 v2.x Message</name>
+  <revision>3</revision>
+  <lastModified>
+    <time>1528471661072</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Because out-of-order HL7 nodes can cause unexpected errors, this function will automatically fix
+	that node order, using the HL7 numeric dot notation.
+
+	@param {XML} node - The E4X XML node to fix.
+	@return {XML} The fixed E4X XML node.
+*/
+function fixHL7NodeOrder(node) {
+	// Create output node
+	var newNode = new XML();
+	
+	// In case the node is an XMLList of multiple siblings, loop through each sibling
+	for each (sibling in node) {
+		// Create new sibling node
+		var newSibling = new XML(&apos;&lt;&apos;+sibling.name().toString()+&apos;/&gt;&apos;);
+		
+		// Iterate through each child node
+		for each (child in sibling.children()) {
+			if (child.hasComplexContent()) {
+				// If the child has its own children, then recursively fix the node order of the child
+				newSibling.appendChild(fixHL7NodeOrder(child));
+			} else {
+				// If the child doesn&apos;t have its own children, then just add the child to the new sibling node
+				newSibling.appendChild(child);
+			}
+		}
+		
+		// After recursively fixing all of the child nodes, now we&apos;ll fix the current node
+		newNode += sortHL7Node(newSibling);
+	}
+	
+	// Return the fixed node
+	return newNode;
+}
+
+// Helper function for fixHL7NodeOrder
+function sortHL7Node(node) {
+	// If the node has no children, then there&apos;s nothing to sort
+	if (node.hasSimpleContent()) {
+		return node;
+	}
+	
+	// Create new output node
+	var newNode = new XML(&apos;&lt;&apos;+node.name().toString()+&apos;/&gt;&apos;);
+	
+	// Iterate through each child in the node
+	for each (child in node.children()) {
+		// If the child has a QName, then we can sort on it
+		if (child.name()) {
+			// Get the current &quot;index&quot; of the child. Id est, if the QName is PID.3.1, then the index is 1
+			curChildIndex = parseInt(child.name().toString().substring(child.name().toString().lastIndexOf(&apos;.&apos;)+1),10);
+			// Boolean placeholder
+			var inserted = false;
+			
+			// Iterate through each child currently in the NEW node
+			for (var i = 0; i &lt;= newNode.children().length()-1; i++) {
+				// Get the index of the child of the new node
+				loopChildIndex = parseInt(newNode.child(i).name().toString().substring(newNode.child(i).name().toString().lastIndexOf(&apos;.&apos;)+1),10);
+				
+				/* 
+					If the child we want to insert has a lower index then the 
+					current child of the new node, then we&apos;re going to insert 
+					the child right before the current newNode child
+				*/
+				if (curChildIndex &lt; loopChildIndex) {
+					// Insert the child
+					newNode.insertChildBefore(newNode.children()[i],child);
+					// Set our flag, indicating that an insertion was made
+					inserted = true;
+					// No need to continue iteration
+					break;
+				}
+			}
+			
+			/*&#xd;				If no insertion was made, then the index of the child we want to 
+				insert is greater than or equal to all of the indices of the 
+				children that have already been inserted in newNode. So, we&apos;ll 
+				just append the child to the end.
+			*/
+			if (!inserted) {
+				newNode.appendChild(child);
+			}
+		}
+	}
+	
+	// Return the sorted HL7 node
+	return newNode;
+}</code>
+  </properties>
+</codeTemplate>
+<codeTemplate version="3.6.0">
+  <id>270003aa-9350-45a7-9397-58679320cb9d</id>
+  <name>Get Segments After a Particular Segment</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528473086609</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Returns an array of segments with the specified name that come after a given segment in the message.
+
+	@param {XML} root - The root HL7Message node of the message, or the parent of the segment node.
+	@param {XML} startSeg - The segment AFTER which to start collecting segments.
+	@param {String/RegExp} segName - The name (String or RegExp) of the segments you want to collect.
+	@param {Boolean} consecutiveInd - If true, indicates that the segments are expected to come
+		directly after startSeg. If false, segments are collected until another segment with the same name
+		as startSeg is encountered. Defaults to false.
+	@param {String[]} stopSegNames - An array of segment names that, when encountered, stop the
+		collection of segments.
+	@return {XML[]} The array of matching segments.
+*/
+function getSegmentsAfter(root, startSeg, segName, consecutiveInd, stopSegNames) {
+	function test(str) {
+		return segName instanceof RegExp ? segName.test(str) : segName === str;
+	}
+
+	// The index to start collection is the next one up from the starting segment
+	var index = startSeg.childIndex()+1;
+	// The return array
+	var out = [];
+	// Boolean placeholder to stop iteration
+	var done = false;
+	// Object that will contain all of the stopSegNames strings, bound to a truthy value (1)
+	var stopNames = {};
+	// Indicates whether we have any stop segments
+	var stopNamesInd = false;
+
+	if (stopSegNames !== undefined &amp;&amp; stopSegNames !== null) {
+		// Set our indicator to true
+		stopNamesInd = true;
+		// Add each string in the array to our object
+		for each (name in stopSegNames) {
+			stopNames[name] = 1;
+		}
+	}
+
+	// Iterate through each child in the root, starting at the segment after startSeg, and
+	// ending at the final segment, or when the done flag is set to true.
+	while (index &lt; root.children().length() &amp;&amp; !done) {
+		if (stopNamesInd &amp;&amp; root.children()[index].name().toString() in stopNames) {
+			// If a stop segment is encountered, stop iteration
+			done = true;
+		} else if (root.children()[index].name().toString() == startSeg.name().toString() &amp;&amp; !consecutiveInd) {
+			// If a segment with the same name as startSeg is encountered, stop iteration
+			done = true;
+		} else if (!test(root.children()[index].name().toString()) &amp;&amp; consecutiveInd) {
+			// If we&apos;re only collecting consecutive segments and we encounter a segment with a name other than segName, stop iteration
+			done = true;
+		} else if (test(root.children()[index].name().toString())) {
+			// If all previous tests passed, and the current segment has a name of segName, then add it to our array
+			out.push(root.children()[index]);
+		}
+		
+		// Increment our index counter
+		index++;
+	}
+
+	// Return the output array
+	return out;
+}</code>
+  </properties>
+</codeTemplate>
+<codeTemplate version="3.6.0">
+  <id>623381ec-3378-4517-a75c-eb476e66aad7</id>
+  <name>Insert Segment After Segment</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528473855719</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Inserts a given segment after a particular segment.
+
+	@param {XML} insertSegment - The segment to insert.
+	@param {XML} afterThisSegment - The segment after which to insert the new segment.
+	@return {XML} The newly inserted segment.
+*/
+function insertSegmentAfter(insertSegment, afterThisSegment) {
+	var msgObj = afterThisSegment;
+	while (msgObj.parent() != undefined) {
+		msgObj = msgObj.parent();
+	}
+	msgObj.insertChildAfter(afterThisSegment[0], insertSegment);
+	return msgObj.child(afterThisSegment[0].childIndex() + 1);
+}</code>
+  </properties>
+</codeTemplate>
+<codeTemplate version="3.6.0">
+  <id>d25ebb24-3802-4caa-a4fe-3b69501187a0</id>
+  <name>Insert Segment Before Segment</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528473854709</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Inserts a given segment before a particular segment.
+
+	@param {XML} insertSegment - The segment to insert.
+	@param {XML} beforeThisSegment - The segment before which to insert the new segment.
+	@return {XML} The newly inserted segment.
+*/
+function insertSegmentBefore(insertSegment, beforeThisSegment) {
+	var msgObj = beforeThisSegment;
+	while (msgObj.parent() != undefined) {
+		msgObj = msgObj.parent();
+	}
+	msgObj.insertChildBefore(beforeThisSegment[0], insertSegment);
+	return msgObj.child(beforeThisSegment[0].childIndex() - 1);
+}</code>
+  </properties>
+</codeTemplate>
+<codeTemplate version="3.6.0">
+  <id>a9e61c41-5b0c-47da-82c9-0601ad5a3baa</id>
+  <name>Overwrite Logger Categories</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528475386384</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Overwrites the categories of Logger objects placed in JavaScript contexts.
+	
+	NOTE: This will work automatically for all contexts except for the transformer. For transformers,
+	you will need to manually include &quot;overwriteCategories();&quot; at the beginning of your first step.
+*/
+function overwriteCategories() {
+	logger = org.apache.log4j.Logger.getLogger({
+		&apos;transformer&apos;:		&apos;custom-transformer&apos;,
+		&apos;preprocessor&apos;:	&apos;custom-preprocessor&apos;,
+		&apos;postprocessor&apos;:	&apos;custom-postprocessor&apos;,
+		&apos;deploy&apos;:			&apos;custom-deploy&apos;,
+		&apos;shutdown&apos;:		&apos;custom-shutdown&apos;,
+		&apos;filter&apos;:			&apos;custom-filter&apos;,
+		&apos;db-connector&apos;:	&apos;custom-db-connector&apos;,
+		&apos;js-connector&apos;:	&apos;custom-js-connector&apos;,
+		&apos;attachment&apos;:		&apos;custom-attachment&apos;,
+		&apos;batch&apos;:			&apos;custom-batch&apos;,
+		&apos;response&apos;:		&apos;custom-response&apos;
+	}[logger.getName()]);
+	logger.setLevel(org.apache.log4j.Level.DEBUG);
+}
+
+overwriteCategories();</code>
+  </properties>
+</codeTemplate>
+<codeTemplate version="3.6.0">
+  <id>80cbe9dc-bbb9-4379-a124-21ce86b3e3ea</id>
+  <name>Rename HL7 Field</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528473385457</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	This function returns a copy of the given HL7 field, changing all segment names to the given name.
+
+	@param {XML} oldField - The field to copy and change.
+	@param {String} name - The new name for the field.
+	@return {XML} The copied and modified field.
+*/
+function renameField(oldField, name) {
+	String.prototype.entityReplace = function() {return this.replace(/&amp;/g,&apos;&amp;amp;&apos;).replace(/&quot;/g,&apos;&amp;quot;&apos;).replace(/&apos;/g,&apos;&amp;apos;&apos;).replace(/&lt;/g,&apos;&amp;lt;&apos;).replace(/&gt;/g,&apos;&amp;gt;&apos;);};
+	
+	var out = new XML();
+	
+	for each (field in oldField) {
+		var outField = new XML(&apos;&lt;&apos;+name+&apos;/&gt;&apos;);
+		
+		for each (component in field.children()) {
+			var cname = name + component.name().toString().substring(component.name().toString().indexOf(&apos;.&apos;,component.name().toString().indexOf(&apos;.&apos;)+1));
+			
+			if (component.children().length() &gt; 1) {
+				// Has subcomponents
+				var outComponent = new XML(&apos;&lt;&apos;+cname+&apos;/&gt;&apos;);
+				
+				for each (subcomponent in component.children()) {
+					var scname = name + subcomponent.name().toString().substring(subcomponent.name().toString().indexOf(&apos;.&apos;,subcomponent.name().toString().indexOf(&apos;.&apos;)+1));
+					var outSubcomponent = new XML(&apos;&lt;&apos;+scname+&apos;&gt;&apos;+subcomponent.toString().entityReplace()+&apos;&lt;/&apos;+scname+&apos;&gt;&apos;);
+					outComponent.scname = outSubcomponent;
+				}
+				
+				outField.cname = outComponent;
+			} else {
+				outField.cname = new XML(&apos;&lt;&apos;+cname+&apos;&gt;&apos;+component.toString().entityReplace()+&apos;&lt;/&apos;+cname+&apos;&gt;&apos;);
+			}
+		}
+		
+		out += outField;
+	}
+	
+	return out;
+}</code>
+  </properties>
+</codeTemplate>
+<codeTemplate version="3.6.0">
+  <id>c4ef99be-6845-4167-8a07-1e6c40b52bb3</id>
+  <name>Replace in All Descendant XML Nodes</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528474729154</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Recursively iterates through all descendant nodes of an E4X XML object and makes a string
+	replacement.
+
+	@param {XML} parent - The E4X XML node to replace within.
+	@param {RegExp} regexp - The regular expression to test against at each leaf (text) node.
+	@param {String} replacement - The string with which to replace.
+*/
+function replaceAllInXML(parent, regexp, replacement) {
+	for each (child in parent.children()) {
+		if (child.hasComplexContent()) {
+			replaceAllInXML(child, regexp, replacement);
+		} else {
+			parent.children()[child.childIndex()] = child.toString().replace(regexp, replacement);
+		}
+	}
+}</code>
+  </properties>
+</codeTemplate>
+<codeTemplate version="3.6.0">
+  <id>ffa5fa9b-e13e-48b1-96d5-b4f7ac08d497</id>
+  <name>Strip Empty Nodes from XML</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528474994810</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Recursively iterates through all descendant nodes of an E4X XML object and removes those that are
+	empty (or those whose children are all empty).
+
+	@param {XML} node - The node to iterate through. If node itself is empty, it will not be removed from its parent.
+	@param {Boolean} stripWhitespaceNodes - If true, nodes that are not empty but only contain whitespace will also be removed.
+	@param {Boolean} onlyDeleteTrailing - If true, only trailing nodes will actually be deleted.
+*/
+function stripEmptyNodes(node, stripWhitespaceNodes, onlyDeleteTrailing) {
+	var nonEmptyFound = false;
+	
+	for (var childIndex = node.children().length()-1; childIndex &gt;= 0; childIndex--) {
+		var child = node.children()[childIndex];
+		stripEmptyNodes(child, stripWhitespaceNodes, onlyDeleteTrailing);
+		
+		if (stripWhitespaceNodes &amp;&amp; !child.toString().trim() || !stripWhitespaceNodes &amp;&amp; !child.toString()) {
+			if (!nonEmptyFound || !onlyDeleteTrailing) {
+				delete node.children()[childIndex];
+			} else {
+				node.children()[childIndex] = new XML(&apos;&lt;&apos;+child.name().toString()+&apos;/&gt;&apos;);
+			}
+		} else {
+			nonEmptyFound = true;
+		}
+	}
+}</code>
+  </properties>
+</codeTemplate>
+<codeTemplate version="3.6.0">
+  <id>9d3f1dd9-d28e-42e5-89bd-8a3569b33b69</id>
+  <name>Unescape \Xdd..\ HL7 Sequences</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528477569887</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Replaces any \Xdd..\ HL7 escape sequences with the corresponding character(s).
+
+	@param {XML} node - The node to recursively iterate through.
+	@param {String} charset - The character encoding set to use when converting bytes to Unicode code
+		points. If not specified, US-ASCII will be used.
+	@param {String} encodingCharacters - The HL7 encoding characters to exclude from the replacement.
+*/
+function unescapeXSequences(node, charset, encodingCharacters) {
+	if (!charset) {
+		charset = &apos;US-ASCII&apos;;
+	}
+
+	if (!encodingCharacters) {
+		encodingCharacters = node.MSH[&apos;MSH.1&apos;].toString().split(&apos;&apos;).concat(node.MSH[&apos;MSH.2&apos;].toString().split(&apos;&apos;));
+		if (encodingCharacters.length == 0) {
+			encodingCharacters = [&apos;|&apos;, &apos;^&apos;, &apos;~&apos;, &apos;\\&apos;, &apos;&amp;&apos;];
+		}
+	}
+
+	for each (child in node.children()) {
+		if (child.hasComplexContent()) {
+			unescapeXSequences(child, charset, encodingCharacters);
+		} else if (!/MSH\.[12]/.test(child.name())) {
+			var childString = child.toString();
+			var matched = false;
+
+			for each (match in childString.match(/\\X([\dA-F]{2})+\\/ig)) {
+				matched = true;
+				var hexString = match.substr(2, match.length-3);
+				var buffer = java.nio.ByteBuffer.allocate(hexString.length / 2);
+
+				while (hexString.length &gt; 0) {
+					var intValue = new java.lang.Integer((java.lang.Character.digit(hexString.substr(0,1), 16) &lt;&lt; 4) + java.lang.Character.digit(hexString.substr(1,1), 16));
+					buffer.put(intValue.byteValue());
+					hexString = hexString.substr(2);
+				}
+
+				childString = childString.replace(match, new java.lang.String(buffer.array(), charset));
+			}
+
+			if (matched) {
+				if (encodingCharacters.length &gt; 3) {
+					childString = childString.replace(encodingCharacters[3], &apos;\\E\\&apos;);
+				}
+				if (encodingCharacters.length &gt; 0) {
+					childString = childString.replace(encodingCharacters[0], &apos;\\F\\&apos;);
+				}
+				if (encodingCharacters.length &gt; 1) {
+					childString = childString.replace(encodingCharacters[1], &apos;\\S\\&apos;);
+				}
+				if (encodingCharacters.length &gt; 2) {
+					childString = childString.replace(encodingCharacters[2], &apos;\\R\\&apos;);
+				}
+				if (encodingCharacters.length &gt; 4) {
+					childString = childString.replace(encodingCharacters[4], &apos;\\T\\&apos;);
+				}
+
+				node.children()[child.childIndex()] = &lt;{child.name()}&gt;{childString}&lt;/{child.name()}&gt;;
+			}
+		}
+	}
+}</code>
+  </properties>
+</codeTemplate>
+</list>
