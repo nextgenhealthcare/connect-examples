@@ -1,0 +1,55 @@
+<codeTemplate version="3.6.0">
+  <id>a9e61c41-5b0c-47da-82c9-0601ad5a3baa</id>
+  <name>Overwrite Logger Categories</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528475386384</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Overwrites the categories of Logger objects placed in JavaScript contexts.
+	
+	NOTE: This will work automatically for all contexts except for the transformer. For transformers,
+	you will need to manually include &quot;overwriteCategories();&quot; at the beginning of your first step.
+*/
+function overwriteCategories() {
+	logger = org.apache.log4j.Logger.getLogger({
+		&apos;transformer&apos;:		&apos;custom-transformer&apos;,
+		&apos;preprocessor&apos;:	&apos;custom-preprocessor&apos;,
+		&apos;postprocessor&apos;:	&apos;custom-postprocessor&apos;,
+		&apos;deploy&apos;:			&apos;custom-deploy&apos;,
+		&apos;shutdown&apos;:		&apos;custom-shutdown&apos;,
+		&apos;filter&apos;:			&apos;custom-filter&apos;,
+		&apos;db-connector&apos;:	&apos;custom-db-connector&apos;,
+		&apos;js-connector&apos;:	&apos;custom-js-connector&apos;,
+		&apos;attachment&apos;:		&apos;custom-attachment&apos;,
+		&apos;batch&apos;:			&apos;custom-batch&apos;,
+		&apos;response&apos;:		&apos;custom-response&apos;
+	}[logger.getName()]);
+	logger.setLevel(org.apache.log4j.Level.DEBUG);
+}
+
+overwriteCategories();</code>
+  </properties>
+</codeTemplate>

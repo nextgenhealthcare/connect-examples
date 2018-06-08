@@ -1,0 +1,88 @@
+<codeTemplate version="3.6.0">
+  <id>942f9161-6998-42e1-9528-83342f457ac5</id>
+  <name>Encrypt PDF</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528479842139</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Encrypts a PDF with a password. Either a Base64 string or by array can be passed in, and the output
+	can be written to a file or returned as a Base64 string.
+
+	@param {String/byte[]} pdfBase64OrBytes - The PDF data to encrypt. May be a Base64 string, or a
+		byte array.
+	@param {String} password - The password to use for encryption.
+	@param {String} outputFilename - (Optional) The filename to output the encrypted PDF to. If
+		omitted, the data will be returned from the function as a Base64 string.
+	@return {String} If outputFilename is not specified, returns the Base64 string.
+*/
+function encryptPDF(pdfBase64OrBytes, password, outputFilename) {
+	var document;
+	var fos;
+
+	try {
+		var pdfBytes;
+		if (pdfBase64OrBytes instanceof Array) {
+			pdfBytes = pdfBase64OrBytes;
+		} else {
+			pdfBytes = FileUtil.decode(pdfBase64OrBytes);
+		}
+
+		var inputStream = new java.io.ByteArrayInputStream(pdfBytes);
+		document = org.apache.pdfbox.pdmodel.PDDocument.load(inputStream);
+
+		var accessPermission = new org.apache.pdfbox.pdmodel.encryption.AccessPermission();
+		accessPermission.setCanAssembleDocument(false);
+		accessPermission.setCanExtractContent(true);
+		accessPermission.setCanExtractForAccessibility(false);
+		accessPermission.setCanFillInForm(false);
+		accessPermission.setCanModify(false);
+		accessPermission.setCanModifyAnnotations(false);
+		accessPermission.setCanPrint(true);
+		accessPermission.setCanPrintDegraded(true);
+
+		var policy = new org.apache.pdfbox.pdmodel.encryption.StandardProtectionPolicy(UUIDGenerator.getUUID(), password, accessPermission);
+		policy.setEncryptionKeyLength(128);
+		document.protect(policy);
+
+		if (outputFilename) {
+			fos = new java.io.FileOutputStream(new java.io.File(outputFilename));
+			document.save(fos);
+		} else {
+			var baos = new java.io.ByteArrayOutputStream();
+			document.save(baos);
+			return FileUtil.encode(baos.toByteArray());
+		}
+	} finally {
+		if (document) {
+			document.close();
+		}
+		if (fos) {
+			fos.close();
+		}
+	}
+}</code>
+  </properties>
+</codeTemplate>

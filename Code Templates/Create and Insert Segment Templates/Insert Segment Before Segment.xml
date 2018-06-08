@@ -1,0 +1,46 @@
+<codeTemplate version="3.6.0">
+  <id>d25ebb24-3802-4caa-a4fe-3b69501187a0</id>
+  <name>Insert Segment Before Segment</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528473854709</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Inserts a given segment before a particular segment.
+
+	@param {XML} insertSegment - The segment to insert.
+	@param {XML} beforeThisSegment - The segment before which to insert the new segment.
+	@return {XML} The newly inserted segment.
+*/
+function insertSegmentBefore(insertSegment, beforeThisSegment) {
+	var msgObj = beforeThisSegment;
+	while (msgObj.parent() != undefined) {
+		msgObj = msgObj.parent();
+	}
+	msgObj.insertChildBefore(beforeThisSegment[0], insertSegment);
+	return msgObj.child(beforeThisSegment[0].childIndex() - 1);
+}</code>
+  </properties>
+</codeTemplate>

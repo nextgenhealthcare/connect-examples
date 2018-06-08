@@ -1,0 +1,150 @@
+<codeTemplate version="3.6.0">
+  <id>64b8b653-162b-454e-a790-21d659934bc8</id>
+  <name>Convert XML to HL7</name>
+  <revision>1</revision>4</revision>
+  <lastModified>
+    <time>1528471047754</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Deserializes an E4X XML node into HL7 v2.x. The last four parameters are optional and default to the
+	standard encoding characters.
+
+	@param {XML} node - The E4X XML node to deserialize.
+	@param {String} fieldSeparator - Defaults to &apos;|&apos; if not specified.
+	@param {String} componentSeparator - Defaults to &apos;^&apos; if not specified.
+	@param {String} repetitionMarker - Defaults to &apos;~&apos; if not specified.
+	@param {String} subcomponentSeparator - Defaults to &apos;&amp;&apos; if not specified.
+	@return {String} The deserialized HL7 v2.x string.
+*/
+function xmlToHL7(node, fieldSeparator, componentSeparator, repetitionMarker, subcomponentSeparator) {
+	// Data validation
+	if (!node) {
+		return &apos;&apos;;
+	}
+	
+	// This shouldn&apos;t really ever happen with E4X anyway, but just in case.
+	String.prototype.replaceAmp = function() {return this.replace(/&amp;amp;/g,&apos;&amp;&apos;);};
+	
+	// If we&apos;re just dealing with a simple node, then just return its contents.
+	if (node.hasSimpleContent()) {
+		return node.toString().replaceAmp();
+	}
+	
+	// Used for StringUtils
+	importPackage(org.apache.commons.lang3);
+	
+	// Defaults to standard HL7 encoding characters
+	var fs = fieldSeparator || &apos;|&apos;;
+	var cs = componentSeparator || &apos;^&apos;;
+	var rm = repetitionMarker || &apos;~&apos;;
+	var ss = subcomponentSeparator || &apos;&amp;&apos;;
+	var cr = &apos;\x0D&apos;;
+
+	// What will actually be returned
+	var output = &apos;&apos;;
+	// Get the XML name of the node (in the case of an XMLList of repeating fields, the first one will be returned, since they all have the same name anyway)
+	var qname = node[0].name().toString();
+	// Use the HL7 dot notation to find what level we&apos;re at
+	var level = StringUtils.countMatches(qname,&apos;.&apos;);
+
+	// If the name is HL7Message, we&apos;re at the root node
+	if (qname == &apos;HL7Message&apos;) {
+		// Recursively append serialization for each segment
+		for each (segment in node.children()) {
+			output += xmlToHL7(segment,fs,cs,rm,ss);
+		}
+	} else if (level == 0) { // If we&apos;re at the segment level
+		// If the node is an XMLList of multiple segments
+		if (node.length() &gt; 1) {
+			// Recursively append serialization for each segment
+			for each (segment in node) {
+				output += xmlToHL7(segment,fs,cs,rm,ss);
+			}
+		} else {
+			// Add the segment name to the output
+			output += qname;
+			// Initialize name placeholder
+			var prevName = &apos;&apos;;
+			
+			// Iterate through each field in the segment
+			for each (field in node.children()) {
+				// Get the QName of the field
+				var fieldName = field.name().toString();
+				
+				// If we&apos;re dealing with the special cases of MSH.1/2, then just add the field contents
+				if (fieldName in {&apos;MSH.1&apos;:1,&apos;MSH.2&apos;:1}) {
+					output += field.toString().replaceAmp();
+				} else { // Otherwise add the recursive serialization of the field
+					// If we&apos;re on a field repetition, then prepend a repetition marker, otherwise prepend a field separator
+					output += (prevName==fieldName?rm:fs) + xmlToHL7(field,fs,cs,rm,ss);
+				}
+				
+				// Update the field name placeholder
+				prevName = fieldName;
+			}
+			
+			// Add a carriage return to the end of the segment
+			output += cr;
+		}
+	} else if (level == 1) { // If we&apos;re at the field level
+		// If the node is an XMLList of multiple fields
+		if (node.length() &gt; 1) {
+			// Recursively append serialization for each field
+			for each (field in node) {
+				output += xmlToHL7(field,fs,cs,rm,ss) + rm;
+			}
+			
+			// Remove the final repetition marker
+			output = StringUtils.chomp(output,rm);
+		}
+		else {
+			// Recursively append serialization for each component
+			for each (component in node.children()) {
+				// Append a component separator to the end
+				output += xmlToHL7(component,fs,cs,rm,ss) + cs;
+			}
+			
+			// Remove the last component separator
+			output = StringUtils.chomp(output,cs);
+		}
+	} else if (level == 2) { // If we&apos;re at the component level
+		// Recursively append serialization for each subcomponent
+		for each (subcomponent in node.children()) {
+			// Append a subcomponent separator to the end
+			output += xmlToHL7(subcomponent,fs,cs,rm,ss) + ss;
+		}
+		
+		// Remove the last subcomponent separator
+		output = StringUtils.chomp(output,ss);
+	} else { // If we&apos;re at the subcomponent level
+		// Just add the contents of the node
+		output = node.toString().replaceAmp();
+	}
+
+	// Return the final output
+	return output;
+}</code>
+  </properties>
+</codeTemplate>

@@ -1,0 +1,57 @@
+<codeTemplate version="3.6.0">
+  <id>ffa5fa9b-e13e-48b1-96d5-b4f7ac08d497</id>
+  <name>Strip Empty Nodes from XML</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528474994810</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Recursively iterates through all descendant nodes of an E4X XML object and removes those that are
+	empty (or those whose children are all empty).
+
+	@param {XML} node - The node to iterate through. If node itself is empty, it will not be removed from its parent.
+	@param {Boolean} stripWhitespaceNodes - If true, nodes that are not empty but only contain whitespace will also be removed.
+	@param {Boolean} onlyDeleteTrailing - If true, only trailing nodes will actually be deleted.
+*/
+function stripEmptyNodes(node, stripWhitespaceNodes, onlyDeleteTrailing) {
+	var nonEmptyFound = false;
+	
+	for (var childIndex = node.children().length()-1; childIndex &gt;= 0; childIndex--) {
+		var child = node.children()[childIndex];
+		stripEmptyNodes(child, stripWhitespaceNodes, onlyDeleteTrailing);
+		
+		if (stripWhitespaceNodes &amp;&amp; !child.toString().trim() || !stripWhitespaceNodes &amp;&amp; !child.toString()) {
+			if (!nonEmptyFound || !onlyDeleteTrailing) {
+				delete node.children()[childIndex];
+			} else {
+				node.children()[childIndex] = new XML(&apos;&lt;&apos;+child.name().toString()+&apos;/&gt;&apos;);
+			}
+		} else {
+			nonEmptyFound = true;
+		}
+	}
+}</code>
+  </properties>
+</codeTemplate>

@@ -1,0 +1,70 @@
+<codeTemplate version="3.6.0">
+  <id>80cbe9dc-bbb9-4379-a124-21ce86b3e3ea</id>
+  <name>Rename HL7 Field</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528473385457</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	This function returns a copy of the given HL7 field, changing all segment names to the given name.
+
+	@param {XML} oldField - The field to copy and change.
+	@param {String} name - The new name for the field.
+	@return {XML} The copied and modified field.
+*/
+function renameField(oldField, name) {
+	String.prototype.entityReplace = function() {return this.replace(/&amp;/g,&apos;&amp;amp;&apos;).replace(/&quot;/g,&apos;&amp;quot;&apos;).replace(/&apos;/g,&apos;&amp;apos;&apos;).replace(/&lt;/g,&apos;&amp;lt;&apos;).replace(/&gt;/g,&apos;&amp;gt;&apos;);};
+	
+	var out = new XML();
+	
+	for each (field in oldField) {
+		var outField = new XML(&apos;&lt;&apos;+name+&apos;/&gt;&apos;);
+		
+		for each (component in field.children()) {
+			var cname = name + component.name().toString().substring(component.name().toString().indexOf(&apos;.&apos;,component.name().toString().indexOf(&apos;.&apos;)+1));
+			
+			if (component.children().length() &gt; 1) {
+				// Has subcomponents
+				var outComponent = new XML(&apos;&lt;&apos;+cname+&apos;/&gt;&apos;);
+				
+				for each (subcomponent in component.children()) {
+					var scname = name + subcomponent.name().toString().substring(subcomponent.name().toString().indexOf(&apos;.&apos;,subcomponent.name().toString().indexOf(&apos;.&apos;)+1));
+					var outSubcomponent = new XML(&apos;&lt;&apos;+scname+&apos;&gt;&apos;+subcomponent.toString().entityReplace()+&apos;&lt;/&apos;+scname+&apos;&gt;&apos;);
+					outComponent.scname = outSubcomponent;
+				}
+				
+				outField.cname = outComponent;
+			} else {
+				outField.cname = new XML(&apos;&lt;&apos;+cname+&apos;&gt;&apos;+component.toString().entityReplace()+&apos;&lt;/&apos;+cname+&apos;&gt;&apos;);
+			}
+		}
+		
+		out += outField;
+	}
+	
+	return out;
+}</code>
+  </properties>
+</codeTemplate>

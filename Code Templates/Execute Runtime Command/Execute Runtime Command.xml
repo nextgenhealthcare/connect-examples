@@ -1,0 +1,75 @@
+<codeTemplate version="3.6.0">
+  <id>28e29e59-d093-41cf-8c2d-4ad4587f9e20</id>
+  <name>Execute Runtime Command</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528480103022</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Executes a command or array of command and arguments using a local OS shell. Returns an object
+	containing the exit value, output, and errors.
+
+	@param {String/Array} args - The command arguments, as either a string or an array.
+	@param {String} charset - (Optional) The charset encoding to use when reading the output from the
+		command. If omitted, the JVM default charset will be used.
+	@return {Object} An Object with the properties exitValue, stdout, and stderr.
+*/
+function executeRuntimeCommand(args, charset) {
+	var process = java.lang.Runtime.getRuntime().exec(args);
+	var stdoutConsumer = new StreamConsumer(process.getInputStream(), charset);
+	var stderrConsumer = new StreamConsumer(process.getErrorStream(), charset);
+	return {
+		exitValue : process.waitFor(),
+		stdout : stdoutConsumer.getOutput(),
+		stderr : stderrConsumer.getOutput()
+	};
+}
+
+function StreamConsumer(is, charset) {
+	var output = &apos;&apos;;
+	
+	var thread = new java.lang.Thread({
+		run: function() {
+			if (typeof charset !== &apos;undefined&apos;) {
+				output = org.apache.commons.io.IOUtils.toString(is, charset);
+			} else {
+				output = org.apache.commons.io.IOUtils.toString(is);
+			}
+		}
+	});
+
+	this.interrupt = function() {
+		thread.interrupt();
+	}
+
+	this.getOutput = function() {
+		thread.join();
+		return output;
+	};
+
+	thread.start();
+}</code>
+  </properties>
+</codeTemplate>

@@ -1,0 +1,47 @@
+<codeTemplate version="3.6.0">
+  <id>dcd2ce64-4c3c-4e53-9f71-dbf296004fe3</id>
+  <name>Extract Text From PDF</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528480223261</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Extracts and returns all text from a PDF. Uses the built-in iText library, version 2.1.7.
+
+	@param {byte[]} pdfBytes - The raw byte array for the PDF.
+	@return {String} The extracted text.
+*/
+function extractTextFromPDF(pdfBytes) {
+	var text = new java.lang.StringBuilder();
+	var reader = new com.lowagie.text.pdf.PdfReader(pdfBytes);
+	
+	try {
+		var extractor = new com.lowagie.text.pdf.parser.PdfTextExtractor(reader);
+		var pages = reader.getNumberOfPages();
+		
+		for (var i = 1; i &lt;= pages; i++) {
+			text.append(extractor.getTextFromPage(i));
+			if (i &lt; pages) {
+				text.append(&apos;\n\n&apos;);
+			}
+		}
+	} finally {
+		reader.close();
+	}
+
+	return text.toString();
+}</code>
+  </properties>
+</codeTemplate>

@@ -1,0 +1,48 @@
+<codeTemplate version="3.6.0">
+  <id>c4ef99be-6845-4167-8a07-1e6c40b52bb3</id>
+  <name>Replace in All Descendant XML Nodes</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1528474729154</time>
+    <timezone>GMT</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>GLOBAL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>GLOBAL_POSTPROCESSOR</contextType>
+      <contextType>CHANNEL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_ATTACHMENT</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>CHANNEL_BATCH</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>CHANNEL_POSTPROCESSOR</contextType>
+      <contextType>GLOBAL_DEPLOY</contextType>
+      <contextType>GLOBAL_PREPROCESSOR</contextType>
+      <contextType>CHANNEL_DEPLOY</contextType>
+      <contextType>CHANNEL_UNDEPLOY</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Recursively iterates through all descendant nodes of an E4X XML object and makes a string
+	replacement.
+
+	@param {XML} parent - The E4X XML node to replace within.
+	@param {RegExp} regexp - The regular expression to test against at each leaf (text) node.
+	@param {String} replacement - The string with which to replace.
+*/
+function replaceAllInXML(parent, regexp, replacement) {
+	for each (child in parent.children()) {
+		if (child.hasComplexContent()) {
+			replaceAllInXML(child, regexp, replacement);
+		} else {
+			parent.children()[child.childIndex()] = child.toString().replace(regexp, replacement);
+		}
+	}
+}</code>
+  </properties>
+</codeTemplate>
