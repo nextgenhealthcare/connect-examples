@@ -614,6 +614,42 @@ function sortHL7Node(node) {
   </properties>
 </codeTemplate>
 <codeTemplate version="3.6.0">
+  <id>7294645e-df37-4536-b2ad-a0d08f4e98be</id>
+  <name>Get Num Pages In PDF</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1534348734335</time>
+    <timezone>America/Los_Angeles</timezone>
+  </lastModified>
+  <contextSet>
+    <delegate>
+      <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+      <contextType>SOURCE_RECEIVER</contextType>
+      <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+      <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+      <contextType>DESTINATION_DISPATCHER</contextType>
+    </delegate>
+  </contextSet>
+  <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+    <type>FUNCTION</type>
+    <code>/**
+	Loads the raw PDF byte array into a PDFBox PDDocument object, then returns the number of pages in
+	the PDF.
+	
+	See also:
+	https://svn.apache.org/repos/asf/pdfbox/cmssite/trunk/content/docs/1.8.4/javadocs/org/apache/pdfbox/pdmodel/PDDocument.html
+
+	@param {byte[]} pdfBytes - The raw PDF byte array.
+	@return {Number} The number of pages in the PDF.
+*/
+function getNumPagesInPDF(pdfBytes) {
+	var is = new java.io.ByteArrayInputStream(pdfBytes);
+	var pdf = org.apache.pdfbox.pdmodel.PDDocument.load(is);
+	return pdf.getNumberOfPages();
+}</code>
+  </properties>
+</codeTemplate>
+<codeTemplate version="3.6.0">
   <id>270003aa-9350-45a7-9397-58679320cb9d</id>
   <name>Get Segments After a Particular Segment</name>
   <revision>1</revision>

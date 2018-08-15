@@ -2,6 +2,7 @@
 This is a repository of example channels, code templates, and other scripts you can import and use in Mirth Connect.
 
 #### Channels
+ - Get Num Pages From Embedded PDF
  - Validate XSD Source Filter
  
 #### Code Templates
@@ -12,6 +13,7 @@ This is a repository of example channels, code templates, and other scripts you 
  - Execute Runtime Command
  - Extract Text From PDF
  - Fix HL7 Node Order
+ - Get Num Pages In PDF
  - Get Segments After a Particular Segment
  - Overwrite Logger Categories
  - Rename HL7 Field
