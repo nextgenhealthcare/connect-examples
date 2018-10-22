@@ -1,0 +1,32 @@
+<list>
+  <codeTemplate version="3.0.2">
+    <id>aab23d47-cae1-4a03-9317-27246e5cf808</id>
+    <name>joinSubcomponents</name>
+    <tooltip></tooltip>
+    <code>/**
+	Returns the string representation of each child element of &lt;b&gt;xml&lt;/b&gt; joined by
+	&lt;b&gt;separator&lt;/b&gt;. If &lt;b&gt;xml&lt;/b&gt; contains no child elements, the string
+	representation of &lt;b&gt;xml&lt;/b&gt; will be returned instead.
+
+	@copyright 2018 Tony Germano
+	@license MPL-2.0
+
+	@param {XML} xml - The e4x xml node representing an HL7 field component.
+	@param {String} separator - Optional character used to join sub-components. Default: &apos;&amp;&apos;.
+	@return {String} 
+*/
+function joinSubcomponents(xml, separator)  {
+	if (typeof separator == &apos;undefined&apos;) separator = &apos;&amp;&apos;;
+	if (xml.hasComplexContent()) {
+		var content = [];
+		for each (var child in xml.children()) {
+			content.push(child.toString());
+		}
+		xml = content.join(separator);
+	} 
+	return xml.toString();
+}</code>
+    <type>FUNCTION</type>
+    <scope>3</scope>
+  </codeTemplate>
+</list>
