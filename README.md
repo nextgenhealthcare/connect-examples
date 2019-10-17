@@ -19,6 +19,7 @@ This is a repository of example channels, code templates, and other scripts you 
  - Overwrite Logger Categories
  - Rename HL7 Field
  - Replace in All Descendant XML Nodes
+ - Run on Startup
  - Strip Empty Nodes from XML
  - Unescape `\Xdd..\` HL7 Sequences
 
