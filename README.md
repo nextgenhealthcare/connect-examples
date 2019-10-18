@@ -21,6 +21,7 @@ This is a repository of example channels, code templates, and other scripts you 
  - Replace in All Descendant XML Nodes
  - Run on Startup
  - Strip Empty Nodes from XML
+ - Thread-safe get or create from globalMap
  - Unescape `\Xdd..\` HL7 Sequences
 
 #### Scripts
