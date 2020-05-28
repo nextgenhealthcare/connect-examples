@@ -12,6 +12,7 @@ This is a repository of example channels, code templates, and other scripts you 
  - Encrypt PDF
  - Execute Runtime Command
  - Extract Text From PDF
+ - Filter XMLLists
  - Fix HL7 Node Order
  - Get Num Pages In PDF
  - Get Segments After a Particular Segment
