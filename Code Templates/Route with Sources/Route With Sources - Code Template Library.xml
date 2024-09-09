@@ -1,0 +1,193 @@
+<codeTemplateLibrary version="3.4.0">
+  <id>ca9c7efd-2329-4248-bb9a-0271554baeaf</id>
+  <name>Route With Sources</name>
+  <revision>2</revision>
+  <lastModified>
+    <time>1718998568183</time>
+    <timezone>America/New_York</timezone>
+  </lastModified>
+  <description>Replacement methods for router.routeMessage* functions with added functionality to automatically insert the current channel
+and message ids into the source chain in the sourceMap of the downstream channel in the same way that a Channel Writer would
+add that information.
+</description>
+  <includeNewChannels>true</includeNewChannels>
+  <enabledChannelIds/>
+  <disabledChannelIds/>
+  <codeTemplates>
+    <codeTemplate version="3.4.0">
+      <id>c487e335-9148-4d12-9c0f-c8e5bf10010b</id>
+      <name>createRawMessage(message, sourceMap, destinationSet)</name>
+      <revision>2</revision>
+      <lastModified>
+        <time>1719010706913</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <type>FUNCTION</type>
+      <contextSet>
+        <delegate>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>CHANNEL_POSTPROCESSOR</contextType>
+          <contextType>GLOBAL_DEPLOY</contextType>
+          <contextType>GLOBAL_UNDEPLOY</contextType>
+          <contextType>GLOBAL_PREPROCESSOR</contextType>
+          <contextType>CHANNEL_BATCH</contextType>
+          <contextType>CHANNEL_UNDEPLOY</contextType>
+          <contextType>CHANNEL_DEPLOY</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>CHANNEL_ATTACHMENT</contextType>
+          <contextType>GLOBAL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_PREPROCESSOR</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <code>/**
+    Create a RawMessage with the specified content, sourceMap, and destinationSet. Information about the
+    chain of source channel Ids and source message Ids will be included in the sourceMap of the new
+    RawMessage automatically in a similar manner as if a Channel Writer was being used.
+
+    If this is called from a context where there is no messageId, a value of -1 will be used.
+
+    If this is called from a context where there is no channelId, a value of &quot;NONE&quot; will be used.
+
+    @copyright 2023,2024 Tony Germano
+    @license MPL-2.0
+
+    @param {string|byte[]} message - The content of the message to be sent, textual or binary.
+    @param {Object|java.util.Map} sourceMap - A map containing entries to include in the sourceMap of
+        the RawMessage (optional).
+    @param {Array&lt;number&gt;|java.util.Collection&lt;Number&gt;} destinationSet - A collection of integers
+        (metadata IDs) representing which destinations to dispatch the message to. Null may be passed to
+        indicate all destinations. If unspecified, all destinations is the default (optional).
+    @return {RawMessage} - A RawMessage object containing the message, source, and destination
+        information.
+*/
+function createRawMessage(message, sourceMap, destinationSet) {
+    if (typeof destinationSet === &apos;undefined&apos;) destinationSet = null
+    if (sourceMap == null) sourceMap = java.util.Collections.emptyMap()
+
+    const sourceChannelIds = $(&apos;sourceChannelIds&apos;) ? new java.util.ArrayList($(&apos;sourceChannelIds&apos;))
+        : $(&apos;sourceChannelId&apos;) ? new java.util.ArrayList([$(&apos;sourceChannelId&apos;)])
+        : new java.util.ArrayList()
+    const sourceMessageIds = $(&apos;sourceMessageIds&apos;) ? new java.util.ArrayList($(&apos;sourceMessageIds&apos;))
+        : $(&apos;sourceMessageId&apos;) ? new java.util.ArrayList([$(&apos;sourceMessageId&apos;)])
+        : new java.util.ArrayList()
+
+    const newSourceMap = new java.util.HashMap(sourceMap),
+        _channelId = typeof channelId !== &apos;undefined&apos; ? channelId : &quot;NONE&quot;,
+        messageId = new java.lang.Long(typeof connectorMessage !== &apos;undefined&apos; ? connectorMessage.messageId : -1)
+
+    sourceChannelIds.add(_channelId)
+    sourceMessageIds.add(messageId)
+
+    newSourceMap.putAll({
+        sourceChannelIds: sourceChannelIds,
+        sourceChannelId: _channelId,
+        sourceMessageIds: sourceMessageIds,
+        sourceMessageId: messageId
+    })
+    
+    return new RawMessage(message, destinationSet, newSourceMap)
+}</code>
+    </codeTemplate>
+    <codeTemplate version="3.4.0">
+      <id>f9472423-7df4-4ba9-a002-9029ec99e4dc</id>
+      <name>routeMessage(channelName, message, sourceMap, destinationSet)</name>
+      <revision>2</revision>
+      <lastModified>
+        <time>1719010706787</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <type>FUNCTION</type>
+      <contextSet>
+        <delegate>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>CHANNEL_POSTPROCESSOR</contextType>
+          <contextType>GLOBAL_DEPLOY</contextType>
+          <contextType>GLOBAL_UNDEPLOY</contextType>
+          <contextType>GLOBAL_PREPROCESSOR</contextType>
+          <contextType>CHANNEL_BATCH</contextType>
+          <contextType>CHANNEL_UNDEPLOY</contextType>
+          <contextType>CHANNEL_DEPLOY</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>CHANNEL_ATTACHMENT</contextType>
+          <contextType>GLOBAL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_PREPROCESSOR</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <code>/**
+    Route a message to the specified channelName. Information about the chain of source channel Ids and
+    source message Ids will be included in the sourceMap of the downstream message automatically in a
+    similar manner as if a Channel Writer was being used.
+
+    @copyright 2023,2024 Tony Germano
+    @license MPL-2.0
+
+    @param {string} channelName - The name of the channel to which to route the message.
+    @param {string|byte[]} message - The content of the message to be sent, textual or binary.
+    @param {Object|java.util.Map} sourceMap - A map containing entries to include in the sourceMap of
+        the sent message (optional).
+    @param {Array&lt;number&gt;|java.util.Collection&lt;Number&gt;} destinationSet - A collection of integers
+        (metadata IDs) representing which destinations to dispatch the message to. Null may be passed to
+        indicate all destinations. If unspecified, all destinations is the default (optional).
+    @return {Response} - The Response object returned by the channel.
+*/
+function routeMessage(channelName, message, sourceMap, destinationSet) {
+    return router.routeMessage(channelName, createRawMessage(message, sourceMap, destinationSet))
+}</code>
+    </codeTemplate>
+    <codeTemplate version="3.4.0">
+      <id>09025c2d-2909-49cd-9382-94e81fb65f4d</id>
+      <name>routeMessageByChannelId(channelId, message, sourceMap, destinationSet)</name>
+      <revision>2</revision>
+      <lastModified>
+        <time>1719010707014</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <type>FUNCTION</type>
+      <contextSet>
+        <delegate>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>CHANNEL_POSTPROCESSOR</contextType>
+          <contextType>GLOBAL_DEPLOY</contextType>
+          <contextType>GLOBAL_UNDEPLOY</contextType>
+          <contextType>GLOBAL_PREPROCESSOR</contextType>
+          <contextType>CHANNEL_BATCH</contextType>
+          <contextType>CHANNEL_UNDEPLOY</contextType>
+          <contextType>CHANNEL_DEPLOY</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>CHANNEL_ATTACHMENT</contextType>
+          <contextType>GLOBAL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_PREPROCESSOR</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <code>/**
+    Route a message to the specified channelId. Information about the chain of source channel Ids and
+    source message Ids will be included in the sourceMap of the downstream message automatically in a
+    similar manner as if a Channel Writer was being used.
+
+    @copyright 2023,2024 Tony Germano
+    @license MPL-2.0
+
+    @param {string} channelId - The unique identifier of the channel to which to route the message.
+    @param {string|byte[]} message - The content of the message to be sent, textual or binary.
+    @param {Object|java.util.Map} sourceMap - A map containing entries to include in the sourceMap of
+        the sent message (optional).
+    @param {Array&lt;number&gt;|java.util.Collection&lt;Number&gt;} destinationSet - A collection of integers
+        (metadata IDs) representing which destinations to dispatch the message to. Null may be passed to
+        indicate all destinations. If unspecified, all destinations is the default (optional).
+    @return {Response} - The Response object returned by the channel.
+*/
+function routeMessageByChannelId(channelId, message, sourceMap, destinationSet) {
+    return router.routeMessageByChannelId(channelId, createRawMessage(message, sourceMap, destinationSet))
+}</code>
+    </codeTemplate>
+  </codeTemplates>
+</codeTemplateLibrary>
