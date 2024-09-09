@@ -29,7 +29,7 @@ This is a repository of example channels, code templates, and other scripts you 
 #### Scripts
  - EDI/X12 Batch Script
  
-See also the public wiki: [https://www.mirthcorp.com/community/wiki/display/mirth/Home](https://www.mirthcorp.com/community/wiki/display/mirth/Home)
+See also the public wiki: [https://github.com/nextgenhealthcare/connect/wiki/](https://github.com/nextgenhealthcare/connect/wiki/)
 
 ## License
 
